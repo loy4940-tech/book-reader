@@ -26,6 +26,15 @@ class Controller:
     def __init__(self) -> None:
         self.paused = True  # 起動直後は一時停止（F9で開始）
         self.stopped = False
+        # GUIから参照する状態（コンソール版では未使用）
+        self.turn_count = 0
+        self.current_key = None
+
+    @property
+    def status(self) -> str:
+        if self.stopped:
+            return "停止"
+        return "一時停止中" if self.paused else "実行中"
 
     def toggle_pause(self) -> None:
         self.paused = not self.paused
@@ -69,6 +78,7 @@ def run_loop(config: dict, controller: Controller) -> None:
     flipped_once = False
     turn_count = 0
     consecutive_no_change = 0
+    controller.current_key = current_key
 
     while not controller.stopped and (max_turns is None or turn_count < max_turns):
         if controller.paused:
@@ -97,6 +107,7 @@ def run_loop(config: dict, controller: Controller) -> None:
 
         send_key_to_hwnd(hwnd, current_key)
         turn_count += 1
+        controller.turn_count = turn_count
         logger.info("ページをめくりました（%d回目, キー=%s）", turn_count, current_key)
 
         if not verify:
@@ -117,6 +128,7 @@ def run_loop(config: dict, controller: Controller) -> None:
         flip_target = opposite_key(current_key)
         if auto_flip and not flipped_once and flip_target is not None:
             current_key = flip_target
+            controller.current_key = current_key
             flipped_once = True
             consecutive_no_change = 0
             logger.warning(

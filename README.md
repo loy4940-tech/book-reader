@@ -76,14 +76,24 @@ pip install -r requirements.txt
 
 ### 2. スクリプト実行
 
+GUI版（ボタン操作の窓）:
+
+```bash
+python gui.py
+```
+
+コンソール版（ログが流れる画面、F9/F10操作）:
+
 ```bash
 python main.py
 ```
 
-### 3. ホットキー操作
+### 3. 操作方法
 
-- **F9:** スクリプト開始/一時停止（トグル）
-- **F10:** スクリプト完全終了
+- **GUI版:** 「開始/一時停止」「終了」ボタンで操作。状態とページ数、ログが窓に表示される。
+- **ホットキー（両版共通）:**
+  - **F9:** 開始/一時停止（トグル）
+  - **F10:** 完全終了
 
 ## 開発フェーズ
 
@@ -114,8 +124,13 @@ python -m PyInstaller AutoPageTurner.spec --noconfirm
 copy config.json dist\config.json
 ```
 
-生成物は `dist\AutoPageTurner.exe` です。**`config.json` を exe と同じフォルダに置く**ことで、
-非エンジニアでもテキストエディタで設定を変更できます。ログは `dist\logs\app.log` に出力されます。
+生成物：
+- `dist\AutoPageTurnerGUI.exe` … GUI版（コンソール窓なし、ボタン操作）
+- `dist\AutoPageTurner.exe` … コンソール版（ログ画面、F9/F10操作）
+
+いずれも**ダブルクリックで起動**でき、PowerShellは不要です。
+**`config.json` を exe と同じフォルダに置く**ことで、非エンジニアでもテキストエディタで
+設定を変更できます。ログは `dist\logs\app.log` に出力されます。
 
 ## ライセンス
 
