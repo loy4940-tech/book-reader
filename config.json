@@ -1,0 +1,8 @@
+{
+  "target_window_title": "Legacy Kindle for PC",
+  "turn_key": "right",
+  "min_interval": 8,
+  "max_interval": 14,
+  "jitter_distribution": "uniform",
+  "max_turns": null
+}
