@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 
+from keys import SUPPORTED_KEYS
+
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
 REQUIRED_KEYS = ("target_window_title", "turn_key", "min_interval", "max_interval")
@@ -47,3 +49,9 @@ def validate_config(config: dict) -> None:
     max_no_change = config.get("max_consecutive_no_change", 3)
     if not isinstance(max_no_change, int) or max_no_change <= 0:
         raise ValueError("max_consecutive_no_change は正の整数である必要があります")
+
+    turn_key = config["turn_key"]
+    if not isinstance(turn_key, str) or turn_key.lower() not in SUPPORTED_KEYS:
+        raise ValueError(
+            f"turn_key は次のいずれかである必要があります: {sorted(SUPPORTED_KEYS)}"
+        )

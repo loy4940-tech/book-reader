@@ -17,6 +17,7 @@ def _valid_config() -> dict:
         "verify_page_change": True,
         "diff_threshold": 0.01,
         "max_consecutive_no_change": 3,
+        "auto_flip_on_no_change": True,
     }
 
 
@@ -69,6 +70,13 @@ def test_invalid_diff_threshold_raises():
 def test_invalid_max_no_change_raises():
     config = _valid_config()
     config["max_consecutive_no_change"] = 0
+    with pytest.raises(ValueError):
+        validate_config(config)
+
+
+def test_invalid_turn_key_raises():
+    config = _valid_config()
+    config["turn_key"] = "escape"
     with pytest.raises(ValueError):
         validate_config(config)
 
