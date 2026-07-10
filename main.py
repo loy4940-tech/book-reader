@@ -8,12 +8,14 @@ import time
 
 import keyboard
 
+from app_paths import base_dir
 from config_loader import load_config
 from input_sender import send_key_to_hwnd
 from keys import opposite_key
 from logger_setup import setup_logger
 from page_verify import page_changed
 from screen_capture import capture_hwnd
+from screen_capture_pdf import CaptureService
 from timing import calc_wait_time
 from window_utils import find_target_window
 
@@ -80,75 +82,99 @@ def run_loop(config: dict, controller: Controller) -> None:
     consecutive_no_change = 0
     controller.current_key = current_key
 
-    while not controller.stopped and (max_turns is None or turn_count < max_turns):
-        if controller.paused:
-            time.sleep(0.2)
-            continue
+    # 画面撮影・PDF化モジュール（有効時のみ）
+    capture_service = None
+    if config.get("screen_capture", {}).get("enabled", False):
+        try:
+            capture_service = CaptureService(config, base_dir())
+            capture_service.start_session()
+        except Exception:
+            logger.exception("撮影セッションの開始に失敗しました（撮影なしで続行します）")
+            capture_service = None
 
-        wait_time = calc_wait_time(min_interval, max_interval, distribution)
-        logger.info("待機: %.2f秒", wait_time)
-        interruptible_sleep(wait_time, controller)
+    try:
+        while not controller.stopped and (max_turns is None or turn_count < max_turns):
+            if controller.paused:
+                time.sleep(0.2)
+                continue
 
-        if controller.stopped or controller.paused:
-            continue
+            wait_time = calc_wait_time(min_interval, max_interval, distribution)
+            logger.info("待機: %.2f秒", wait_time)
+            interruptible_sleep(wait_time, controller)
 
-        window = find_target_window(target_title)
-        if window is None:
-            logger.warning(
-                "対象ウィンドウ '%s' が見つかりません。自動的に一時停止します。"
-                "アプリを開いてF9で再開してください。",
-                target_title,
-            )
-            controller.paused = True
-            continue
-        hwnd = window._hWnd
+            if controller.stopped or controller.paused:
+                continue
 
-        before = capture_hwnd(hwnd) if verify else None
+            window = find_target_window(target_title)
+            if window is None:
+                logger.warning(
+                    "対象ウィンドウ '%s' が見つかりません。自動的に一時停止します。"
+                    "アプリを開いてF9で再開してください。",
+                    target_title,
+                )
+                controller.paused = True
+                continue
+            hwnd = window._hWnd
 
-        send_key_to_hwnd(hwnd, current_key)
-        turn_count += 1
-        controller.turn_count = turn_count
-        logger.info("ページをめくりました（%d回目, キー=%s）", turn_count, current_key)
+            # 現在表示中（待機で描画が安定した）ページを撮影してからめくる
+            if capture_service is not None:
+                try:
+                    capture_service.capture_once()
+                except Exception:
+                    logger.exception("撮影中にエラーが発生しました（ページめくりは継続します）")
 
-        if not verify:
-            continue
+            before = capture_hwnd(hwnd) if verify else None
 
-        time.sleep(0.4)  # 描画反映を待つ
-        after = capture_hwnd(hwnd)
-        if before is not None and after is not None and page_changed(before, after, threshold):
-            consecutive_no_change = 0
-            continue
+            send_key_to_hwnd(hwnd, current_key)
+            turn_count += 1
+            controller.turn_count = turn_count
+            logger.info("ページをめくりました（%d回目, キー=%s）", turn_count, current_key)
 
-        consecutive_no_change += 1
-        logger.warning("ページが変化していない可能性があります（連続%d回）", consecutive_no_change)
-        if consecutive_no_change < max_no_change:
-            continue
+            if not verify:
+                continue
 
-        # ③保険：起動直後に空振りが続く場合、一度だけ左右を自動反転する
-        flip_target = opposite_key(current_key)
-        if auto_flip and not flipped_once and flip_target is not None:
-            current_key = flip_target
-            controller.current_key = current_key
-            flipped_once = True
-            consecutive_no_change = 0
-            logger.warning(
-                "%d回連続で変化を検出できなかったため、ページめくり方向を自動反転しました → キー=%s"
-                "（設定が逆だった可能性があります）",
-                max_no_change, current_key,
-            )
+            time.sleep(0.4)  # 描画反映を待つ
+            after = capture_hwnd(hwnd)
+            if before is not None and after is not None and page_changed(before, after, threshold):
+                consecutive_no_change = 0
+                continue
+
+            consecutive_no_change += 1
+            logger.warning("ページが変化していない可能性があります（連続%d回）", consecutive_no_change)
+            if consecutive_no_change < max_no_change:
+                continue
+
+            # ③保険：起動直後に空振りが続く場合、一度だけ左右を自動反転する
+            flip_target = opposite_key(current_key)
+            if auto_flip and not flipped_once and flip_target is not None:
+                current_key = flip_target
+                controller.current_key = current_key
+                flipped_once = True
+                consecutive_no_change = 0
+                logger.warning(
+                    "%d回連続で変化を検出できなかったため、ページめくり方向を自動反転しました → キー=%s"
+                    "（設定が逆だった可能性があります）",
+                    max_no_change, current_key,
+                )
+            else:
+                controller.paused = True
+                consecutive_no_change = 0
+                logger.warning(
+                    "%d回連続で変化を検出できなかったため自動的に一時停止しました。"
+                    "対象アプリの状態を確認し、F9で再開してください。",
+                    max_no_change,
+                )
+
+        if controller.stopped:
+            logger.info("ホットキー操作により終了しました")
         else:
-            controller.paused = True
-            consecutive_no_change = 0
-            logger.warning(
-                "%d回連続で変化を検出できなかったため自動的に一時停止しました。"
-                "対象アプリの状態を確認し、F9で再開してください。",
-                max_no_change,
-            )
-
-    if controller.stopped:
-        logger.info("ホットキー操作により終了しました")
-    else:
-        logger.info("最大ターン数（%s）に到達したため終了します", max_turns)
+            logger.info("最大ターン数（%s）に到達したため終了します", max_turns)
+    finally:
+        if capture_service is not None:
+            try:
+                capture_service.finish_session()
+            except Exception:
+                logger.exception("PDF生成中にエラーが発生しました")
 
 
 def _load_config_safely():

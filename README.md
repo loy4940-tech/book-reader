@@ -95,6 +95,44 @@ python main.py
   - **F9:** 開始/一時停止（トグル）
   - **F10:** 完全終了
 
+## 画面撮影・PDF化機能（screen_capture_pdf）
+
+ページめくりと連動して、めくる直前に表示中のページを撮影し、セッション終了時に
+時系列順で1ページ1枚のPDFにまとめる機能です（`config.json` の `screen_capture` で設定）。
+
+- **対象ウィンドウのみ撮影**：実証済みの PrintWindow 方式を流用。裏に隠れていても
+  対象ウィンドウの中身だけを撮り、画面全体や他ウィンドウは写しません。
+- **撮影間隔**：独自に持たず、既存のページめくり間隔（ランダム）に同期。
+- **PDF**：A4横向き、各ページに撮影日時とページ番号、先頭にセッション概要ページ。
+- **後処理**：PDF生成が成功（ファイル存在・0byteでない・ページ数一致）した場合のみ
+  一時PNGを削除。失敗時はPNGを残します。`metadata.json` と `logs` は常に保存。
+
+設定例（`config.json` の一部）:
+
+```json
+"screen_capture": {
+  "enabled": true,
+  "target": {
+    "window_title_keyword": "Legacy Kindle for PC",
+    "process_name": null,
+    "require_visible": true,
+    "allow_minimized": false
+  },
+  "output": {
+    "base_dir": "output/screen_capture",
+    "keep_png_after_pdf": false,
+    "pdf_page_size": "A4",
+    "pdf_orientation": "landscape",
+    "add_timestamp": true,
+    "add_page_number": true,
+    "add_summary_page": true
+  }
+}
+```
+
+出力先：`output/screen_capture/<セッションID>/capture_log.pdf`（と `metadata.json`）。
+`enabled: false`（既定）の間は撮影せず、ページめくりのみ動作します。
+
 ## 開発フェーズ
 
 詳細は [PLAN.md](./PLAN.md) を参照してください。

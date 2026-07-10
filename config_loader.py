@@ -56,3 +56,28 @@ def validate_config(config: dict) -> None:
         raise ValueError(
             f"turn_key は次のいずれかである必要があります: {sorted(SUPPORTED_KEYS)}"
         )
+
+    _validate_screen_capture(config.get("screen_capture"))
+
+
+def _validate_screen_capture(sc) -> None:
+    """screen_capture セクション（任意）の妥当性を検証する。"""
+    if sc is None:
+        return
+    if not isinstance(sc, dict):
+        raise ValueError("screen_capture はオブジェクトである必要があります")
+    if not isinstance(sc.get("enabled", False), bool):
+        raise ValueError("screen_capture.enabled は true/false である必要があります")
+
+    if sc.get("enabled", False):
+        target = sc.get("target", {})
+        if not target.get("window_title_keyword"):
+            raise ValueError(
+                "screen_capture 有効時は target.window_title_keyword が必須です"
+            )
+
+    orientation = sc.get("output", {}).get("pdf_orientation", "landscape")
+    if orientation not in ("landscape", "portrait"):
+        raise ValueError(
+            "screen_capture.output.pdf_orientation は 'landscape' または 'portrait' である必要があります"
+        )

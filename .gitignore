@@ -138,5 +138,6 @@ Thumbs.db
 
 # Project specific
 logs/
+output/
 *.screenshot
 config.local.json
