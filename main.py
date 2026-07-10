@@ -3,6 +3,7 @@
 対象ウィンドウをアクティブにせず、PostMessageで直接キーを送る。
 ページ遷移検証はPrintWindowで隠れたウィンドウでも撮影して行う。
 """
+import json
 import time
 
 import keyboard
@@ -138,18 +139,52 @@ def run_loop(config: dict, controller: Controller) -> None:
         logger.info("最大ターン数（%s）に到達したため終了します", max_turns)
 
 
-def main() -> None:
-    config = load_config()
+def _load_config_safely():
+    """設定を読み込み、異常時は種類別にログを出してNoneを返す。"""
+    try:
+        config = load_config()
+    except FileNotFoundError:
+        logger.error("設定ファイル config.json が見つかりません。ファイルを配置してください。")
+        return None
+    except json.JSONDecodeError as e:
+        logger.error("config.json の書式が不正です（JSONとして読めません）: %s", e)
+        return None
+    except ValueError as e:
+        logger.error("config.json の設定内容が不正です: %s", e)
+        return None
     logger.info("設定を読み込みました: %s", config)
+    return config
+
+
+def _setup_hotkeys(controller: Controller) -> bool:
+    """ホットキーを登録する。権限不足等で失敗した場合はFalseを返す。"""
+    try:
+        keyboard.add_hotkey("F9", controller.toggle_pause)
+        keyboard.add_hotkey("F10", controller.stop)
+    except Exception as e:  # keyboardの権限エラー等（OS/環境依存で型が一定しない）
+        logger.error(
+            "ホットキーの登録に失敗しました（%s）。"
+            "管理者権限でPowerShellを起動して再実行してください。", e,
+        )
+        return False
+    return True
+
+
+def main() -> None:
+    config = _load_config_safely()
+    if config is None:
+        return
 
     controller = Controller()
-    keyboard.add_hotkey("F9", controller.toggle_pause)
-    keyboard.add_hotkey("F10", controller.stop)
+    if not _setup_hotkeys(controller):
+        return
 
     try:
         run_loop(config, controller)
     except KeyboardInterrupt:
         logger.info("ユーザーによって中断されました（Ctrl+C）")
+    except Exception:
+        logger.exception("予期しないエラーが発生したため終了します")
     finally:
         keyboard.unhook_all_hotkeys()
 

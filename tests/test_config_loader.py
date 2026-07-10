@@ -86,3 +86,15 @@ def test_load_config_from_file(tmp_path):
     config_file.write_text(json.dumps(_valid_config()), encoding="utf-8")
     loaded = load_config(config_file)
     assert loaded["target_window_title"] == "Legacy Kindle for PC"
+
+
+def test_missing_file_raises_filenotfound(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        load_config(tmp_path / "does_not_exist.json")
+
+
+def test_malformed_json_raises_jsondecodeerror(tmp_path):
+    config_file = tmp_path / "config.json"
+    config_file.write_text("{ this is not valid json", encoding="utf-8")
+    with pytest.raises(json.JSONDecodeError):
+        load_config(config_file)
