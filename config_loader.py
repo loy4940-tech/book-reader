@@ -2,9 +2,10 @@
 import json
 from pathlib import Path
 
+from app_paths import base_dir
 from keys import SUPPORTED_KEYS
 
-CONFIG_PATH = Path(__file__).parent / "config.json"
+CONFIG_PATH = base_dir() / "config.json"
 
 REQUIRED_KEYS = ("target_window_title", "turn_key", "min_interval", "max_interval")
 

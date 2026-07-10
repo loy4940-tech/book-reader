@@ -95,8 +95,27 @@ python main.py
 | Phase 1 | 環境構築・権限確認 | ✅ 完了 |
 | Phase 2 | コアロジック実装 | ✅ 完了 |
 | Phase 3 | 制御機能追加 | ✅ 完了 |
-| Phase 4 | テスト・調整 | 進行中 |
-| Phase 5 | パッケージング | 未開始 |
+| Phase 4 | テスト・調整 | ✅ 完了 |
+| Phase 5 | パッケージング | ✅ 完了 |
+
+## exe化（配布用ビルド）
+
+Python環境がないPCでも起動できる単一exeを作成できます。
+
+```powershell
+# venvを有効化した状態で
+.\build.bat
+```
+
+または手動で：
+
+```powershell
+python -m PyInstaller AutoPageTurner.spec --noconfirm
+copy config.json dist\config.json
+```
+
+生成物は `dist\AutoPageTurner.exe` です。**`config.json` を exe と同じフォルダに置く**ことで、
+非エンジニアでもテキストエディタで設定を変更できます。ログは `dist\logs\app.log` に出力されます。
 
 ## ライセンス
 

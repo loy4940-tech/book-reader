@@ -29,7 +29,9 @@ MANIFEST
 
 # PyInstaller
 *.manifest
+# AutoPageTurner.spec は再現ビルドのため追跡する（下で除外解除）
 *.spec
+!AutoPageTurner.spec
 
 # Installer logs
 pip-log.txt

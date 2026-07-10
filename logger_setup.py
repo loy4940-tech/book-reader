@@ -1,12 +1,13 @@
 """ロギング設定モジュール。コンソールとファイルの両方にログを出力する。"""
 import logging
 import sys
-from pathlib import Path
+
+from app_paths import base_dir
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-LOG_DIR = Path(__file__).parent / "logs"
+LOG_DIR = base_dir() / "logs"
 LOG_FILE = LOG_DIR / "app.log"
 
 
