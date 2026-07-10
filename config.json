@@ -4,5 +4,8 @@
   "min_interval": 8,
   "max_interval": 14,
   "jitter_distribution": "uniform",
-  "max_turns": null
+  "max_turns": null,
+  "verify_page_change": true,
+  "diff_threshold": 0.01,
+  "max_consecutive_no_change": 3
 }

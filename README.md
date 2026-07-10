@@ -49,12 +49,15 @@ pip install -r requirements.txt
 ```
 
 **設定項目：**
-- `target_window_title`: 対象アプリウィンドウのタイトル
+- `target_window_title`: 対象アプリウィンドウのタイトル（部分一致で判定）
 - `turn_key`: ページめくり用キー（`right`, `space`, `pagedown` など）
 - `min_interval`: 待機時間最小値（秒）
 - `max_interval`: 待機時間最大値（秒）
 - `jitter_distribution`: 分布方式（`uniform` または `gaussian`）
 - `max_turns`: 最大ターン数（`null`で無制限）
+- `verify_page_change`: ページ遷移検証を有効化するか（`true`/`false`）
+- `diff_threshold`: 変化ありと判定する差分の閾値（0.0〜1.0）
+- `max_consecutive_no_change`: 連続で変化を検出できなかった場合に自動停止する回数
 
 ### 2. スクリプト実行
 
@@ -73,11 +76,11 @@ python main.py
 
 | フェーズ | 目標 | ステータス |
 |---------|------|----------|
-| Phase 0 | 対象操作の実地検証 | 未開始 |
-| Phase 1 | 環境構築・権限確認 | 未開始 |
-| Phase 2 | コアロジック実装 | 未開始 |
-| Phase 3 | 制御機能追加 | 未開始 |
-| Phase 4 | テスト・調整 | 未開始 |
+| Phase 0 | 対象操作の実地検証 | ✅ 完了 |
+| Phase 1 | 環境構築・権限確認 | ✅ 完了 |
+| Phase 2 | コアロジック実装 | ✅ 完了 |
+| Phase 3 | 制御機能追加 | ✅ 完了 |
+| Phase 4 | テスト・調整 | 進行中 |
 | Phase 5 | パッケージング | 未開始 |
 
 ## ライセンス

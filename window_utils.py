@@ -1,4 +1,5 @@
 """対象ウィンドウのアクティブ状態確認ユーティリティ。"""
+import pyautogui
 import pygetwindow as gw
 
 
@@ -16,3 +17,16 @@ def find_target_window(target_title_substring: str):
         if target_title_substring in window.title:
             return window
     return None
+
+
+def capture_window(window):
+    """指定ウィンドウの領域をスクリーンショットとして取得する。
+
+    ウィンドウが最小化中・領域が不正な場合はNoneを返す。
+    """
+    if window is None:
+        return None
+    left, top, width, height = window.left, window.top, window.width, window.height
+    if width <= 0 or height <= 0:
+        return None
+    return pyautogui.screenshot(region=(left, top, width, height))

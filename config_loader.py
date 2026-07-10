@@ -39,3 +39,11 @@ def validate_config(config: dict) -> None:
     max_turns = config.get("max_turns")
     if max_turns is not None and (not isinstance(max_turns, int) or max_turns <= 0):
         raise ValueError("max_turns は null または正の整数である必要があります")
+
+    threshold = config.get("diff_threshold", 0.01)
+    if not isinstance(threshold, (int, float)) or not 0.0 <= threshold <= 1.0:
+        raise ValueError("diff_threshold は 0.0〜1.0 の数値である必要があります")
+
+    max_no_change = config.get("max_consecutive_no_change", 3)
+    if not isinstance(max_no_change, int) or max_no_change <= 0:
+        raise ValueError("max_consecutive_no_change は正の整数である必要があります")

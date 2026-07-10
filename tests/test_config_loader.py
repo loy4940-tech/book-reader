@@ -14,6 +14,9 @@ def _valid_config() -> dict:
         "max_interval": 14,
         "jitter_distribution": "uniform",
         "max_turns": None,
+        "verify_page_change": True,
+        "diff_threshold": 0.01,
+        "max_consecutive_no_change": 3,
     }
 
 
@@ -52,6 +55,20 @@ def test_invalid_distribution_raises():
 def test_invalid_max_turns_raises():
     config = _valid_config()
     config["max_turns"] = 0
+    with pytest.raises(ValueError):
+        validate_config(config)
+
+
+def test_invalid_diff_threshold_raises():
+    config = _valid_config()
+    config["diff_threshold"] = 1.5
+    with pytest.raises(ValueError):
+        validate_config(config)
+
+
+def test_invalid_max_no_change_raises():
+    config = _valid_config()
+    config["max_consecutive_no_change"] = 0
     with pytest.raises(ValueError):
         validate_config(config)
 
