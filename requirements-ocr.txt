@@ -1,0 +1,14 @@
+# OCR側の依存（Python 3.12 の別venv用）
+# キャプチャ側（Python 3.14 / requirements.txt）とは分離する。
+#
+# 導入手順:
+#   py -3.12 -m venv ocrenv
+#   ocrenv\Scripts\activate
+#   pip install -r requirements-ocr.txt
+#
+# 別途、pip管理外のTesseract本体とtraineddataが必要。
+# 導入後に tools/ocr_env_check.py で検証し、ocr_environment.json を生成する。
+
+Pillow>=10.0.0
+pytesseract>=0.3.13
+pytest>=7.4.0

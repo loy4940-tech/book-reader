@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-08-12T18:15:13+09:00",
+  "python": "3.12.10",
+  "python_packages": {
+    "Pillow": "12.3.0",
+    "pytesseract": "0.3.13",
+    "pytest": "9.1.1"
+  },
+  "os": "Windows 11",
+  "engine": "tesseract",
+  "engine_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.EXE",
+  "engine_version": "tesseract v5.4.0.20240606",
+  "tessdata_dir": "C:\\Program Files\\Tesseract-OCR\\tessdata",
+  "traineddata": {
+    "jpn": {
+      "path": "C:\\Program Files\\Tesseract-OCR\\tessdata\\jpn.traineddata",
+      "sha256": "6f416b902d129d8cc28e99c33244034b1cf52549e8560f6320b06d317852159a",
+      "size_bytes": 35659159
+    },
+    "jpn_vert": {
+      "path": "C:\\Program Files\\Tesseract-OCR\\tessdata\\jpn_vert.traineddata",
+      "sha256": "36879c1aa07634302c9dcb2c1ed4f8fb347c705ad7522dd693ee2e9d68028a79",
+      "size_bytes": 3039939
+    },
+    "eng": {
+      "path": "C:\\Program Files\\Tesseract-OCR\\tessdata\\eng.traineddata",
+      "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
+      "size_bytes": 4113088
+    }
+  },
+  "candidate_parameters": {
+    "ja_vertical": {
+      "lang": "jpn_vert",
+      "psm": 5
+    },
+    "ja_horizontal": {
+      "lang": "jpn",
+      "psm": 6
+    },
+    "en_horizontal": {
+      "lang": "eng",
+      "psm": 6
+    }
+  },
+  "preprocess_version": "1",
+  "classifier_version": "1",
+  "pipeline_version": "1"
+}
