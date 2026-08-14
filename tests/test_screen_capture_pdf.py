@@ -113,7 +113,7 @@ def _config(enabled=True, keyword="___no_such_window___"):
         "screen_capture": {
             "enabled": enabled,
             "target": {"window_title_keyword": keyword},
-            "output": {"base_dir": "output/screen_capture"},
+            "output": {"base_dir": "output"},
         },
     }
 
@@ -128,24 +128,51 @@ def test_capture_once_records_skip_when_window_missing(tmp_path):
 
 
 def test_finish_session_builds_pdf_and_deletes_png(tmp_path, monkeypatch):
-    """撮影成功をモックし、PDF生成→PNG削除まで通ることを確認する。"""
+    """撮影成功をモックし、PDF生成→PNG削除→imagesフォルダ削除まで通ることを確認する。"""
     from screen_capture_pdf import capture_service as cs
     from screen_capture_pdf.window_resolver import ResolveResult, WindowInfo
 
-    fake_window = WindowInfo(hwnd=1, title="業務アプリ", left=0, top=0, width=400, height=300)
+    fake_window = WindowInfo(hwnd=1, title="Legacy Kindle for PC - 新書 世界現代史", left=0, top=0, width=400, height=300)
     monkeypatch.setattr(cs, "resolve_target", lambda *a, **k: ResolveResult(fake_window, None))
     monkeypatch.setattr(cs, "capture_window", lambda hwnd: Image.new("RGB", (400, 300), (180, 180, 180)))
 
-    service = CaptureService(_config(keyword="業務"), tmp_path)
+    service = CaptureService(_config(keyword="Legacy Kindle for PC"), tmp_path)
     service.start_session()
     service.capture_once()
     service.capture_once()
     png_paths = list(tmp_path.rglob("*.png"))
-    assert len(png_paths) == 2  # 撮影直後はPNGが存在
+    assert len(png_paths) == 2
 
     pdf_path = service.finish_session()
     assert pdf_path is not None and pdf_path.exists()
-    # keep_png_after_pdf=False（既定）なのでPNGは削除されている
+    # フォルダ名に書名が入っている
+    assert "新書 世界現代史" in pdf_path.parent.name
+    # PDF名に日付と書名が入っている（capture_log_pdf_プレフィックスなし）
+    assert pdf_path.name.startswith("20")
+    assert "新書 世界現代史" in pdf_path.name
+    # keep_png_after_pdf=False（既定）なのでPNG・imagesフォルダは削除されている
     assert list(tmp_path.rglob("*.png")) == []
+    assert not any(p.name == "images" for p in tmp_path.rglob("*") if p.is_dir())
     data = json.loads(next(tmp_path.rglob("metadata.json")).read_text(encoding="utf-8"))
     assert data["images_deleted_after_pdf"] is True
+    marker = json.loads(next(tmp_path.rglob(".capture_complete.json")).read_text(encoding="utf-8"))
+    assert marker["schema_version"] == 1
+    assert marker["session_id"] == data["session_id"]
+
+
+def test_extract_book_name():
+    """ウィンドウタイトルから書名を正しく抽出する。"""
+    from screen_capture_pdf.capture_service import _extract_book_name
+    assert _extract_book_name("Legacy Kindle for PC - 新書 世界現代史") == "新書 世界現代史"
+    assert _extract_book_name("アプリ名のみ") == "アプリ名のみ"
+
+
+def test_unique_dir_increments(tmp_path):
+    """同名フォルダが存在する場合に連番が付く。"""
+    from screen_capture_pdf.capture_service import _unique_dir
+    (tmp_path / "20260710_本A").mkdir()
+    result = _unique_dir(tmp_path, "20260710_本A")
+    assert result.name == "20260710_本A_2"
+    result.mkdir()
+    result2 = _unique_dir(tmp_path, "20260710_本A")
+    assert result2.name == "20260710_本A_3"

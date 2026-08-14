@@ -391,14 +391,10 @@ class IngestionWorker:
             if (Path(session_path) / "ocr.json").is_file():
                 from .output import generate_json_output, generate_markdown, generate_text_files
 
-                try:
-                    generate_text_files(session_path)
-                    generate_markdown(session_path)
-                    generate_json_output(session_path)
-                    logger.info("session output generated: session=%s", readiness.session_id)
-                except Exception as output_exc:
-                    logger.warning("output generation failed: session=%s error=%s",
-                                   readiness.session_id, output_exc)
+                generate_text_files(session_path)
+                generate_markdown(session_path)
+                generate_json_output(session_path)
+                logger.info("session output generated: session=%s", readiness.session_id)
 
             write_worker_state(
                 session_path, readiness.session_id, IngestionState.COMPLETED,

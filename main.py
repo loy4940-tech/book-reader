@@ -13,7 +13,7 @@ from config_loader import load_config
 from input_sender import send_key_to_hwnd
 from keys import opposite_key
 from logger_setup import setup_logger
-from page_verify import page_changed
+from page_verify import DEFAULT_BLOCK_CONTENT_ROI, PageChangeState, verify_page_change
 from screen_capture import capture_hwnd
 from screen_capture_pdf import CaptureService
 from timing import calc_wait_time
@@ -80,6 +80,8 @@ def run_loop(config: dict, controller: Controller) -> None:
     flipped_once = False
     turn_count = 0
     consecutive_no_change = 0
+    verified_change_count = 0
+    stopped_no_change_limit = False
     controller.current_key = current_key
 
     # 画面撮影・PDF化モジュール（有効時のみ）
@@ -133,20 +135,39 @@ def run_loop(config: dict, controller: Controller) -> None:
             if not verify:
                 continue
 
-            time.sleep(0.4)  # 描画反映を待つ
-            after = capture_hwnd(hwnd)
-            if before is not None and after is not None and page_changed(before, after, threshold):
+            state = (
+                verify_page_change(
+                    before,
+                    lambda: capture_hwnd(hwnd),
+                    threshold=threshold,
+                    roi=DEFAULT_BLOCK_CONTENT_ROI,
+                    retry_count=2,
+                    stabilization_wait=0.4,
+                    sleep=time.sleep,
+                )
+                if before is not None
+                else PageChangeState.NO_CHANGE_RETRY_EXHAUSTED
+            )
+            if state is PageChangeState.CHANGE_CONFIRMED:
+                verified_change_count += 1
                 consecutive_no_change = 0
                 continue
 
             consecutive_no_change += 1
-            logger.warning("ページが変化していない可能性があります（連続%d回）", consecutive_no_change)
+            logger.warning(
+                "retry後もページ変化を確認できませんでした（連続%d回）",
+                consecutive_no_change,
+            )
             if consecutive_no_change < max_no_change:
                 continue
 
-            # ③保険：起動直後に空振りが続く場合、一度だけ左右を自動反転する
+            # 変化未確認が閾値に達した → 2つのケースを区別する
+            #   ケースA: 開始直後（まだ変化確認なし）→ 方向が逆の可能性 → 自動反転（③保険）
+            #   ケースB: 変化確認後 → 最終ページとは断定せず、検証不能として停止
+            at_book_start = verified_change_count <= 0
+
             flip_target = opposite_key(current_key)
-            if auto_flip and not flipped_once and flip_target is not None:
+            if at_book_start and auto_flip and not flipped_once and flip_target is not None:
                 current_key = flip_target
                 controller.current_key = current_key
                 flipped_once = True
@@ -157,15 +178,18 @@ def run_loop(config: dict, controller: Controller) -> None:
                     max_no_change, current_key,
                 )
             else:
-                controller.paused = True
-                consecutive_no_change = 0
                 logger.warning(
-                    "%d回連続で変化を検出できなかったため自動的に一時停止しました。"
-                    "対象アプリの状態を確認し、F9で再開してください。",
-                    max_no_change,
+                    "%d回連続でページ変化を確認できなかったため停止します"
+                    "（試行=%d, 変化確認=%d）。最終ページ到達を意味しません。",
+                    max_no_change, turn_count, verified_change_count,
                 )
+                stopped_no_change_limit = True
+                controller.stop()
+                break
 
-        if controller.stopped:
+        if stopped_no_change_limit:
+            logger.info("ページ変化確認不能により自動停止しました（合計%d回試行）", turn_count)
+        elif controller.stopped:
             logger.info("ホットキー操作により終了しました")
         else:
             logger.info("最大ターン数（%s）に到達したため終了します", max_turns)

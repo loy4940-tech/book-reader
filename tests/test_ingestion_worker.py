@@ -356,3 +356,102 @@ def test_ingestion_worker_cli_integration_with_mock_batch(tmp_path, monkeypatch)
 
     # Verify exit code (0 = success, 1 = retryable failure, 2 = terminal failure)
     assert exit_code == 0
+
+
+def test_output_generation_failure_prevents_completion(tmp_path, monkeypatch):
+    """TEST-FIX-01: Output generation failure doesn't mark session as COMPLETED."""
+    import json
+    from ocr import output as output_module
+    from unittest.mock import MagicMock
+
+    # Create session with OCR results
+    session = _session(tmp_path, "session-with-ocr", complete=True)
+
+    # Create ocr.json to trigger output generation
+    ocr_json = session / "ocr.json"
+    ocr_json.write_text(json.dumps({"pages": []}))
+
+    # Mock output generation to fail
+    def mock_generate_text_files(path):
+        raise RuntimeError("Failed to write text files")
+
+    monkeypatch.setattr(output_module, "generate_text_files", mock_generate_text_files)
+
+    # Also mock batch to actually create ocr.json (since store initialization can fail)
+    class OcrBatch:
+        def __init__(self):
+            self.calls = []
+
+        def run(self, path):
+            self.calls.append(Path(path))
+            # Simulate successful OCR batch result
+            return Result()
+
+    batch = OcrBatch()
+    worker = IngestionWorker(tmp_path, batch, worker_id="test")
+
+    outcome = worker.process(session)
+
+    # Session should NOT be COMPLETED; should be FAILED (retryable or terminal)
+    assert outcome.state in (IngestionState.FAILED_RETRYABLE.value, IngestionState.FAILED_TERMINAL.value)
+    assert outcome.state != IngestionState.COMPLETED.value
+
+    # Verify state was persisted
+    state = load_worker_state(session)
+    assert state["state"] in (IngestionState.FAILED_RETRYABLE.value, IngestionState.FAILED_TERMINAL.value)
+
+
+def test_output_failure_observable_in_worker_outcome(tmp_path, monkeypatch):
+    """TEST-FIX-02: Output generation failure is observable in WorkerOutcome."""
+    import json
+    from pathlib import Path
+    from ocr import output as output_module
+
+    session = _session(tmp_path, "session-output-fail", complete=True)
+    ocr_json = session / "ocr.json"
+    ocr_json.write_text(json.dumps({"pages": []}))
+
+    def mock_generate_markdown(path):
+        raise ValueError("Bad markdown format")
+
+    monkeypatch.setattr(output_module, "generate_markdown", mock_generate_markdown)
+
+    class OcrBatch:
+        def __init__(self):
+            self.calls = []
+
+        def run(self, path):
+            self.calls.append(Path(path))
+            return Result()
+
+    batch = OcrBatch()
+    worker = IngestionWorker(tmp_path, batch, worker_id="test")
+    outcome = worker.process(session)
+
+    # Failure should be observable - state must NOT be COMPLETED
+    assert outcome.state in (IngestionState.FAILED_RETRYABLE.value, IngestionState.FAILED_TERMINAL.value)
+    assert outcome.state != IngestionState.COMPLETED.value
+
+
+def test_normal_completion_without_output_generation(tmp_path):
+    """TEST-FIX-04: Normal COMPLETED state when no output generation needed."""
+    from pathlib import Path
+
+    # Create session without ocr.json (so output generation is skipped)
+    session = _session(tmp_path, "session-no-output", complete=True)
+
+    class OcrBatch:
+        def __init__(self):
+            self.calls = []
+
+        def run(self, path):
+            self.calls.append(Path(path))
+            return Result()
+
+    batch = OcrBatch()
+    worker = IngestionWorker(tmp_path, batch, worker_id="test")
+    outcome = worker.process(session)
+
+    # Should complete normally when no output generation is needed
+    # (output generation only happens if ocr.json exists)
+    assert outcome.state == IngestionState.COMPLETED.value
