@@ -186,3 +186,54 @@
 * **「一定時間経過後にめくる」だけで良いか再検討:** 完全固定間隔だと、対象アプリ側で「一定間隔の機械的操作」を検知される可能性がある場合や、単に不自然な読書ペースになる場合があるため、上記の通りランダム幅を持たせることを推奨。
 * **ログの保存:** 稼働ログをファイルに残しておくと、「途中で止まっていた」等のトラブル時に原因切り分けがしやすい。
 * **利用規約の確認:** 対象アプリが電子書籍サービス等の場合、自動操作がサービス利用規約に抵触しないか事前に確認することを推奨（技術的な話とは別に、運用上のリスクとして明記）。
+
+---
+
+## 6. E2E品質独立基盤フェーズ（Phase 6 - Phase 11）
+
+### 実装完了状態（E2E_QUALITY_INDEPENDENT_FOUNDATION 正式完了・2026-08-15）
+
+以下のPhaseは、実OCR engine品質依存フェーズを先送りにしながら、E2E経路の完全性・reproducibility・reliability基盤を確立するために実装済みです。
+
+| Phase / Gate | 概要 | 状態 |
+|---|---|---|
+| Phase 6 原本保全・評価基盤 | キャプチャPNG保持、config再設計、metadata記録、session検証、Calibration/Acceptance分割準備 | ✅ COMPLETED |
+| Phase 7A OCR環境構築 | Tesseract/YomiToku候補環境、gate1 specification、candidate adapter | ✅ COMPLETED |
+| Gate 1 OCR engine選定 | Tesseract/YomiToku formal comparison（Calibration 10ページ） | ❌ FAILED / FORMALLY_RESOLVED (formal candidate=NONE) |
+| Phase 7B OCR engine/profile確定 | formal candidate選定後の engine version/trained data/parameter固定 | ⏸ BLOCKED (formal candidate待ち) |
+| Phase 8A Quality-Independent Ingestion Worker Foundation | session discover/validate/claim/process CLI | ✅ COMPLETED |
+| Phase 8B Figure Extraction / Persistence Foundation | structured figure bbox → filesystem manifestatomic保存 | ✅ COMPLETED |
+| Phase 9 Quality-Independent Output Foundation | text/markdown/json generation、E2E synthetic path | ✅ COMPLETED |
+| Gate 2A OCR品質評価 | Acceptance set上での実OCR精度確認（Gate 1 formal candidateが必須前提） | ⏸ NOT_STARTED (formal candidate待ち) |
+| Gate 2B AI投入用途性確認 | AI要約・構造化の実用性（Phase 9出力形式に基づく） | ⏸ NOT_STARTED (Gate 2A待ち) |
+| Phase 11 Production-Ready Operations | qualified/disposable/purge classification、state persistence、recovery | ⏸ PARTIAL (core completed, quality-dependent未完了) |
+| Phase 10 (Optional) Figure Analysis / Chapter Structure | 図版抽出・章構造解析 | ⏸ OPTIONAL (core completion後判断) |
+| Gate 3 (Optional) Complete Pipeline Gate | End-to-end AI利用まで含めた品質判定 | ⏸ OPTIONAL (core completion後判定) |
+
+### 現在の依存関係
+
+```
+formal OCR candidate (none currently)
+    ↓
+Phase 7B engine/profile固定
+    ↓
+Gate 2A OCR品質評価
+    ↓
+Gate 2B AI実用性確認
+    ↓
+Phase 11品質依存部分完成
+    ↓
+core product completion
+```
+
+formal candidate がない現在、**Phase 7B以降は全てblocked状態です。**
+
+### Gate 1再開Decision（P0フェーズ）
+
+**DEC-G1-EXHAUST-001** （前Gate 1正式終了）により、Tesseract/YomiToku両candidateが exhausted、formal candidate = NONE と正式決定されました。
+
+本repositoryが **real OCR engine を組み込むことを core requirement** としている場合、formal candidate取得のため **Gate 1を再開する必要があります。**
+
+詳細は別紙 `DEC-G1-REOPEN-001` (存在する場合) を参照してください。
+
+---
