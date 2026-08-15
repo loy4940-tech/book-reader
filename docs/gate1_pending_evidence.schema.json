@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bookreader.gate1.pending-evidence.v1",
+  "type": "object",
+  "required": ["schema_version", "gate_id", "run_id", "candidates", "pages", "selection_result"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "gate_id": {"const": "GATE_1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "selection_result": {"const": "PENDING_HUMAN_REVIEW"},
+    "pages": {"type": "array", "minItems": 10}
+  }
+}

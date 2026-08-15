@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bookreader.gate1.review.v1",
+  "type": "object",
+  "required": ["schema_version", "gate_id", "run_id", "pages"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "gate_id": {"const": "GATE_1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "pages": {"type": "array", "minItems": 10, "maxItems": 10}
+  }
+}

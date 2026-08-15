@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bookreader.gate1.evidence.v1",
+  "title": "Bookreader Gate 1 Evidence",
+  "type": "object",
+  "required": ["schema_version", "gate_id", "run_id", "timestamp", "git_commit", "dataset_id", "dataset_hash", "gold_id", "gold_hash", "candidates", "pages", "selection_result"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "gate_id": {"const": "GATE_1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "timestamp": {"type": "string", "minLength": 1},
+    "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "dataset_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gold_id": {"type": "string", "minLength": 1},
+    "gold_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "candidates": {"type": "array", "minItems": 1},
+    "pages": {"type": "array", "minItems": 10},
+    "selection_result": {
+      "type": "object",
+      "required": ["gate_status", "selection_result", "candidate_id"],
+      "properties": {
+        "gate_status": {"enum": ["PASS", "FAIL", "BLOCKED"]},
+        "selection_result": {"enum": ["PROVISIONAL", "NO_SELECTION", "TIE / NO_SELECTION"]},
+        "candidate_id": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}
