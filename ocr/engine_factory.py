@@ -2,9 +2,11 @@
 
 from pathlib import Path
 
-from .config import load_ocr_config, load_yomitoku_config
+from .config import load_ocr_config, load_paddleocr_config, load_yomitoku_config
 from .engines import (
+    PADDLEOCR_CANDIDATE_ID,
     SYNTHETIC_CANDIDATE_PREFIX,
+    PaddleOcrEngine,
     SyntheticEngine,
     TesseractEngine,
     YOMITOKU_CANDIDATE_ID,
@@ -26,4 +28,7 @@ def create_candidate(candidate_id: str, *, manifest_path: Path | None = None):
     if candidate_id == YOMITOKU_CANDIDATE_ID:
         config = load_yomitoku_config(manifest_path)
         return config, YomiTokuEngine(config)
+    if candidate_id == PADDLEOCR_CANDIDATE_ID:
+        config = load_paddleocr_config(manifest_path)
+        return config, PaddleOcrEngine(config)
     raise EngineUnavailableError(f"unknown OCR candidate: {candidate_id}")
