@@ -1,0 +1,20 @@
+{
+  "candidate_id": "PADDLE-PPOCRV5-MOBILE-CPU-001",
+  "profile_frozen": true,
+  "acceptance_access": 0,
+  "engine": "PaddleOCR",
+  "engine_version": "3.7.0",
+  "paddlepaddle_version": "3.2.2",
+  "python_version": "3.12.10",
+  "device": "cpu",
+  "text_detection_model_name": "PP-OCRv5_mobile_det",
+  "text_recognition_model_name": "PP-OCRv5_mobile_rec",
+  "use_doc_orientation_classify": false,
+  "use_doc_unwarping": false,
+  "use_textline_orientation": false,
+  "paddlex_cache_home": "C:\\projects\\book_reader\\.tmp\\paddlex_cache_mobile_20260817",
+  "reading_order_pipeline": "R3",
+  "page_progression_authority": "DEC-G1-R3-PAGE-PROGRESSION-001",
+  "dataset_version": "POST_R1_R1B_REPAIR",
+  "formal_threshold": "10/10 pages with Major=0"
+}

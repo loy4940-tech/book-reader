@@ -167,3 +167,54 @@ def load_paddleocr_config(manifest_path: Path | None = None) -> PaddleOcrConfig:
         use_textline_orientation=bool(data["use_textline_orientation"]),
         paddlex_cache_home=str(data["paddlex_cache_home"]),
     )
+
+
+def load_paddleocr_mobile_config(manifest_path: Path | None = None) -> PaddleOcrConfig:
+    path = manifest_path or Path(__file__).resolve().parent.parent / "PADDLEOCR_CANDIDATE_PROFILE_MOBILE.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise EngineUnavailableError(f"PaddleOCR mobile candidate profileを読めません: {path}") from exc
+    if data.get("candidate_id") != "PADDLE-PPOCRV5-MOBILE-CPU-001":
+        raise EngineUnavailableError("PaddleOCR mobile candidate profileのcandidate IDが不正です")
+    if data.get("profile_frozen") is not True or data.get("acceptance_access") != 0:
+        raise EngineUnavailableError("PaddleOCR mobile candidate profileがFormal-readyではありません")
+    parameters = {
+        "ja_vertical": {
+            "language": "jpn",
+            "device": data["device"],
+            "text_detection_model_name": data["text_detection_model_name"],
+            "text_recognition_model_name": data["text_recognition_model_name"],
+        },
+        "ja_horizontal": {
+            "language": "jpn",
+            "device": data["device"],
+            "text_detection_model_name": data["text_detection_model_name"],
+            "text_recognition_model_name": data["text_recognition_model_name"],
+        },
+        "en_horizontal": {
+            "language": "eng",
+            "device": data["device"],
+            "text_detection_model_name": data["text_detection_model_name"],
+            "text_recognition_model_name": data["text_recognition_model_name"],
+        },
+    }
+    profile_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    traineddata = {"jpn": {"sha256": profile_hash}, "eng": {"sha256": profile_hash}}
+    return PaddleOcrConfig(
+        engine_version=str(data.get("engine_version", "3.7.0")),
+        traineddata=traineddata,
+        candidate_parameters=parameters,
+        preprocess_version="1",
+        classifier_version="1",
+        pipeline_version="1",
+        profile_path=str(path),
+        candidate_id=str(data["candidate_id"]),
+        device=str(data["device"]),
+        text_detection_model_name=str(data["text_detection_model_name"]),
+        text_recognition_model_name=str(data["text_recognition_model_name"]),
+        use_doc_orientation_classify=bool(data["use_doc_orientation_classify"]),
+        use_doc_unwarping=bool(data["use_doc_unwarping"]),
+        use_textline_orientation=bool(data["use_textline_orientation"]),
+        paddlex_cache_home=str(data["paddlex_cache_home"]),
+    )
